@@ -1,10 +1,15 @@
+import json
 import sqlite3
 
 if __name__ == '__main__':
-    annotations_connection = sqlite3.connect('/Users/hamlet/Library/Containers/com.apple.iBooksX/Data/Documents/AEAnnotation/AEAnnotation_v10312011_1727_local.sqlite')
+    # read path from config file
+    config = {}
+    with open('./config.json', 'r') as file:
+        config = json.load(file)
+    annotations_connection = sqlite3.connect(config['paths']['annotations'])
     cursor = annotations_connection.cursor()
 
-    books_db_path = '/Users/hamlet/Library/Containers/com.apple.iBooksX/Data/Documents/BKLibrary/BKLibrary-1-091020131601.sqlite'
+    books_db_path = config['paths']['books']
     books_connection = sqlite3.connect(books_db_path)
     books_cursor = books_connection.cursor()
     cursor.execute(f'ATTACH DATABASE "{books_db_path}" AS books')
