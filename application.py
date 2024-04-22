@@ -33,14 +33,30 @@ if __name__ == '__main__':
     results = [result for result in results if result[0] is not None and result[0] != '']
     markdown_document = ''
 
-    for result in results:
-        markdown_document += f'## {result[1]} by {result[2]}\n'
-        markdown_document += f'{result[3]}\n'
-        markdown_document += f'Chapter: {result[6]}\n'
-        markdown_document += f'Style: {result[7]}\n'
+    # order notes by location
+    # filter out notes without selected text
+    # group by author and title and chapter
+    for [asset_id, title, author, selected_text, note, represent_text, chapter, style, modified_date, location] in results:
+        if selected_text is None or selected_text == '':
+            continue
+
+        if author is None:
+            author = 'Unknown Author'
+
+        if title is None:
+            title = 'Unknown Title'
+
+        if chapter is None:
+            chapter = 'Unknown Chapter'
 
         # add a line break
         markdown_document += '\n\n\n'
+        # group notes per book and chapter
+        markdown_document += f'## {author} - {title}\n'
+        markdown_document += f'### Chapter: {chapter}\n'
+        # add a line break
+        markdown_document += '\n'
+        markdown_document += f'>{selected_text}\n'
 
     # write the markdown document to a file
     with open('./out/annotations.md', 'w') as file:
