@@ -55,8 +55,9 @@ class ExportToNotionDatabaseCommand(Command):
         # http request to notion api
         headers = {
             'Authorization': 'Bearer ' + self.api_key,
+            'Notion-Version': '2022-02-22'
         }
-        response = requests.get('https://api.notion.com/v1/databases/25cc94ca0d874264a84db5b510205e5b',headers=headers, data=self.data)
+        response = requests.get('https://api.notion.com/v1/databases/25cc94ca0d874264a84db5b510205e5b', headers=headers)
         print(response.json())
 
 class Invoker:
