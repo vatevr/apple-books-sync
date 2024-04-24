@@ -1,5 +1,69 @@
+import abc
 import json
 import sqlite3
+
+
+class Command(abc.ABC):
+    @abc.abstractmethod
+    def execute(self):
+        pass
+
+
+class ExportMarkdownCommand(Command):
+    def __init__(self, data):
+        self.data = data
+
+    def execute(self):
+        markdown_document = ''
+        # order notes by location
+        # filter out notes without selected text
+        # group by author and title and chapter
+        for [asset_id, title, author, selected_text, note, represent_text, chapter, style, modified_date,
+             location] in results:
+            if selected_text is None or selected_text == '':
+                continue
+
+            if author is None:
+                author = 'Unknown Author'
+
+            if title is None:
+                title = 'Unknown Title'
+
+            if chapter is None:
+                chapter = 'Unknown Chapter'
+
+            # add a line break
+            markdown_document += '\n\n\n'
+            # group notes per book and chapter
+            markdown_document += f'## {author} - {title}\n'
+            markdown_document += f'### Chapter: {chapter}\n'
+            # add a line break
+            markdown_document += '\n'
+            markdown_document += f'>{selected_text}\n'
+
+        # write the markdown document to a file
+        with open('./out/annotations.md', 'w') as file:
+            file.write(markdown_document)
+
+
+class ExportToNotionDatabaseCommand(Command):
+    def __init__(self, data):
+        self.data = data
+
+    def execute(self):
+        pass
+
+
+class Invoker:
+    def __init__(self):
+        self.command = None
+
+    def set_command(self, command):
+        self.command = command
+
+    def execute_command(self):
+        self.command.execute()
+
 
 if __name__ == '__main__':
     # read path from config file
@@ -36,33 +100,8 @@ if __name__ == '__main__':
     results = cursor.fetchall()
     # filter out the None values
     results = [result for result in results if result[0] is not None and result[0] != '']
-    markdown_document = ''
 
-    # order notes by location
-    # filter out notes without selected text
-    # group by author and title and chapter
-    for [asset_id, title, author, selected_text, note, represent_text, chapter, style, modified_date, location] in results:
-        if selected_text is None or selected_text == '':
-            continue
-
-        if author is None:
-            author = 'Unknown Author'
-
-        if title is None:
-            title = 'Unknown Title'
-
-        if chapter is None:
-            chapter = 'Unknown Chapter'
-
-        # add a line break
-        markdown_document += '\n\n\n'
-        # group notes per book and chapter
-        markdown_document += f'## {author} - {title}\n'
-        markdown_document += f'### Chapter: {chapter}\n'
-        # add a line break
-        markdown_document += '\n'
-        markdown_document += f'>{selected_text}\n'
-
-    # write the markdown document to a file
-    with open('./out/annotations.md', 'w') as file:
-        file.write(markdown_document)
+    command = ExportMarkdownCommand(results)
+    invoker = Invoker()
+    invoker.set_command(command)
+    invoker.execute_command()
