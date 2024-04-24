@@ -2,5 +2,9 @@
   "paths": {
     "books": "/Users/hamlet/Library/Containers/com.apple.iBooksX/Data/Documents/BKLibrary/BKLibrary-1-091020131601.sqlite",
     "annotations": "/Users/hamlet/Library/Containers/com.apple.iBooksX/Data/Documents/AEAnnotation/AEAnnotation_v10312011_1727_local.sqlite"
+  },
+  "notion": {
+    "token": "secret_",
+    "databaseId": "25cc94ca0d874264a84db5b510205e5b"
   }
 }

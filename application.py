@@ -1,7 +1,7 @@
 import abc
 import json
 import sqlite3
-
+import requests
 
 class Command(abc.ABC):
     @abc.abstractmethod
@@ -47,12 +47,17 @@ class ExportMarkdownCommand(Command):
 
 
 class ExportToNotionDatabaseCommand(Command):
-    def __init__(self, data):
+    def __init__(self, data, api_key):
         self.data = data
+        self.api_key = api_key
 
     def execute(self):
-        pass
-
+        # http request to notion api
+        headers = {
+            'Authorization': 'Bearer ' + self.api_key,
+        }
+        response = requests.get('https://api.notion.com/v1/databases/25cc94ca0d874264a84db5b510205e5b',headers=headers, data=self.data)
+        print(response.json())
 
 class Invoker:
     def __init__(self):
@@ -101,7 +106,7 @@ if __name__ == '__main__':
     # filter out the None values
     results = [result for result in results if result[0] is not None and result[0] != '']
 
-    command = ExportMarkdownCommand(results)
+    command = ExportToNotionDatabaseCommand(results, config['notion']['token'])
     invoker = Invoker()
     invoker.set_command(command)
     invoker.execute_command()
