@@ -2,6 +2,8 @@ import abc
 import json
 import sqlite3
 import requests
+import datetime
+
 
 class Command(abc.ABC):
     @abc.abstractmethod
@@ -47,18 +49,100 @@ class ExportMarkdownCommand(Command):
 
 
 class ExportToNotionDatabaseCommand(Command):
-    def __init__(self, data, api_key):
+    def __init__(self, data, api_key, database_id):
         self.data = data
         self.api_key = api_key
+        self.database_id = database_id
 
     def execute(self):
+        for [asset_id, title, author, selected_text, note, represent_text, chapter, style, modified_date,
+             location] in results:
+            if represent_text is None or represent_text == '' or selected_text is None or selected_text == '':
+                continue
+
+            if author is None:
+                author = 'Unknown Author'
+
+            if title is None:
+                title = 'Unknown Title'
+
+            if chapter is None:
+                chapter = 'Unknown Chapter'
+
+            text = represent_text if represent_text is not None else selected_text
+            self.create_page(author, chapter, modified_date, text, title)
+
+    def create_page(self, author, chapter, modified_date, text, title):
         # http request to notion api
+        # https://developers.notion.com/reference/post-page
         headers = {
             'Authorization': 'Bearer ' + self.api_key,
-            'Notion-Version': '2022-02-22'
+            'Notion-Version': '2022-06-28',
+            'Content-Type': 'application/json'
         }
-        response = requests.get('https://api.notion.com/v1/databases/25cc94ca0d874264a84db5b510205e5b', headers=headers)
-        print(response.json())
+        data = {
+            "parent": {
+                "database_id": "7f9135bdb0c44f4195acdf377d8670a1"
+            },
+            "properties": {
+                "Title": {
+                    "title": [
+                        {
+                            "text": {
+                                "content": title if title is not None else 'Unknown Title'
+                            }
+                        }
+                    ]
+                },
+                "Chapter": {
+                    "rich_text": [
+                        {
+                            "text": {
+                                "content": chapter if chapter is not None else 'Unknown'
+                            }
+                        }
+                    ]
+                },
+                "Text": {
+                    "rich_text": [
+                        {
+                            "text": {
+                                "content": text if text is not None else 'n/a'
+                            }
+                        }
+                    ]
+                },
+                "Author": {
+                    # author is a coma separated list of authors
+                    "multi_select": [{"name": author} for author in [author.strip() for author in author.split(',')]]
+                },
+                "Highlighted At": {
+                    "date": {
+                        "start": datetime.datetime.fromtimestamp(modified_date).isoformat()
+                    }
+                },
+            },
+            "children": [
+                {
+                    "object": "block",
+                    "type": "paragraph",
+                    "paragraph": {
+                        "rich_text": [
+                            {
+                                "type": "text",
+                                "text": {
+                                    "content": text if text is not None else '',
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+        response = requests.post('https://api.notion.com/v1/pages', headers=headers, data=json.dumps(data))
+        if response.status_code != 200:
+            print(response.json())
+
 
 class Invoker:
     def __init__(self):
@@ -107,7 +191,7 @@ if __name__ == '__main__':
     # filter out the None values
     results = [result for result in results if result[0] is not None and result[0] != '']
 
-    command = ExportToNotionDatabaseCommand(results, config['notion']['token'])
+    command = ExportToNotionDatabaseCommand(results, config['notion']['token'], config['notion']['databaseId'])
     invoker = Invoker()
     invoker.set_command(command)
     invoker.execute_command()
